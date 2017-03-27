@@ -1,0 +1,4 @@
+aiomysql==0.0.9
+peewee==2.9.1
+peewee-async==0.5.7
+PyMySQL==0.7.10

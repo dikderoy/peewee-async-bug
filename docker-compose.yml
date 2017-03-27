@@ -1,0 +1,11 @@
+version: '2'
+services:
+  maria:
+    image: mariadb
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_ROOT_PASSWORD=r00tpassw0rd
+      - MYSQL_USER=app
+      - MYSQL_PASSWORD=t3stpassw0rd
+      - MYSQL_DATABASE=test_db
