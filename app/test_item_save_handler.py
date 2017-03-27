@@ -1,4 +1,5 @@
 import asyncio
+import unittest
 from unittest import TestCase
 
 import peewee
@@ -34,13 +35,25 @@ class TestItem(TestCase):
             cls.clear_tables()
         )
 
-    def test_bug(self):
+    def test_1_succeed(self):
         async def test():
             print('add 1st record')
             await self.add_record(1)
-            await asyncio.sleep(60 * 15)
+            # note: no sleep! and it works
             t = asyncio.Task(self.add_record(2))
             print('add 2nd record')
+            await t
+            print('success')
+
+        asyncio.get_event_loop().run_until_complete(test())
+
+    def test_2_fails(self):
+        async def test():
+            print('add 3rd record')
+            await self.add_record(3)
+            await asyncio.sleep(60 * 20)
+            t = asyncio.Task(self.add_record(4))
+            print('add 4th record')
             await t
             print('success')
 
@@ -53,3 +66,7 @@ class TestItem(TestCase):
         async with object_manager.atomic():
             item = await irepo.save({'id': identifier, 'sid': 1, 'title': 'i_%s' % identifier})
         return source, item
+
+
+if __name__ == '__main__':
+    unittest.main()

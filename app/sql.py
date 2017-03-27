@@ -1,31 +1,12 @@
-import asyncio
 import logging
-import os
 from time import time
 
 import peewee
 import peewee_async
 
+from app.settings import cdb
+
 logger = logging.getLogger(__name__)
-
-MYSQL_USER = 'app'
-MYSQL_PASSWORD = 't3stpassw0rd'
-MYSQL_DATABASE = 'test_db'
-MYSQL_HOST = os.getenv('MYSQL_HOST', '127.0.0.1')
-MYSQL_PORT = os.getenv('MYSQL_PORT', 3306)
-
-if not MYSQL_USER or not MYSQL_PASSWORD:
-    raise RuntimeError('mysql credentials not configured')
-
-cdb = peewee_async.PooledMySQLDatabase(
-    MYSQL_DATABASE,
-    user=MYSQL_USER,
-    password=MYSQL_PASSWORD,
-    host=MYSQL_HOST,
-    port=MYSQL_PORT,
-    charset='utf8',
-    max_connections=5
-)
 
 object_manager = peewee_async.Manager(database=cdb)
 
@@ -101,18 +82,6 @@ class Item2Source(BaseModel):
         primary_key = peewee.CompositeKey('source', 'item')
 
 
-def _wrap_exceptions(fn):
-    async def _wrapper_catch_db_exceptions(*args, **kwargs):
-        try:
-            return await fn(*args, **kwargs)
-        except peewee.InterfaceError as e:
-            logger.exception('[mysql] mysql connection trouble, ruin the daemon so it will be restarted')
-            asyncio.get_event_loop().stop()
-            raise
-
-    return _wrapper_catch_db_exceptions
-
-
 class ItemMysqlStorageAdapter:
     def __init__(self):
         super().__init__()
@@ -143,7 +112,7 @@ class ItemMysqlStorageAdapter:
                  if name not in [Item.id.name, Item.created.name]])
         logger.debug('update source references for %s', entity)
         # noinspection PyUnresolvedReferences
-        if entity.meta.sid is not None and entity.meta.sid \
+        if entity['sid'] is not None and entity['sid'] \
                 not in [ref.source_id for ref in existing.item2source_set_prefetch]:
             source = await self._manager.get(Source, Source.id == entity['sid'])  # type: Source
             logger.debug('create source reference for %s', entity)
